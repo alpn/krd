@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<style>
+    table, th, td,tr{
+        border: 1px solid #EEEFF1;
+        border-collapse: collapse;
+        white-space: normal;
+        height: auto;
+    }
+    body { background-color: white; color: black; font-family: 'Comic Sans MS', 'Chalkboard SE', 'Comic Neue', sans-serif; }
+    hr { border: 0; border-bottom: 1px dashed; }
+    @media (prefers-color-scheme: dark) {
+    body,table,th,td, input{ background-color: #1E1F21; color: #EEEFF1; }
+    a { color: #BAD7FF; }
+    }
+    textarea {
+        resize: none; /* Prevent manual resizing */
+        overflow: hidden; /* Hide scrollbar */
+        width: 100%; /* Take up full width of container */
+        box-sizing: border-box; /* Include padding and border in width */
+        min-height: 50px; /* Set a minimum height */
+        height: auto;
+    }
+</style>
+</head>
+<body>
+<a href="/">home</a>
+<table>
+    <tr>
+    <th>modify</th>
+    {{ range .Cols}}
+    <th><a href='/s/{{ $.Name }}/{{ . }}'>{{ . }}</a></th>
+    {{ end}}
+    </tr>
+    <tr>
+    <form method="post" action="/a">
+        <input style="display:none" name="table" value="{{ .Name }}">
+    <td style="text-align:center;">
+        <button>add</button>
+    </td>
+    <td></td>
+    {{ range .Cols}}
+    {{ if and (ne . "rowid") }}
+    <td>
+        <input style="padding:3px; border:0; color:yellow;" name="{{ . }}" value="New {{ . }}">
+    </td>
+    {{ end}}
+    {{ end}}
+        </form>
+    </tr>
+
+    </tr>
+    {{ range .Rows}}
+    <tr>
+        {{ $row := . }}
+        <td style="text-align:center">
+            <a style="color:red;text-decoration: none" href='/d/{{ $.Name }}/{{ index $row.Vals 0}}'>delete</a>
+            <a style="color:blue;text-decoration: none" href='/dup/{{ $.Name }}/{{ index $row.Vals 0}}'>duplicate</a>
+        </td>
+        <form method="post" action="/u">
+            <input style="display:none" name="table" value="{{ $.Name }}">
+        <td align="center">
+            <input style="display:none" name="rowid" value="{{ index $row.Vals 0 }}">
+            {{ index $row.Vals 0 }}
+        </td>
+        {{ range $i,$s := $.Cols }}
+        {{ if ne $s "rowid" }}
+
+        <td>  
+            <!-- <textarea style="padding:3px; border:0; height:auto;" name="{{ . }}">{{ index $row.Vals $i }}</textarea> -->
+            <input style="padding:3px; border:0;" name="{{ . }}" value="{{ index $row.Vals $i }}">
+        </td>
+        {{ end }}
+        {{ end }}
+        <input type="submit" style="visibility: hidden;displa:none" />
+
+        </form>
+    </tr>
+    {{ end}}
+</table>
+</body>
+</html>
