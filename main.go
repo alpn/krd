@@ -96,30 +96,24 @@ func handleRemove(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 func handleDuplicate(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		if "GET" == r.Method {
-			duplicateStatement := `insert into %s select * from %s where rowid=%s`
+		duplicateStatement := `insert into %s select * from %s where rowid=%s`
 
-			whatever := strings.TrimPrefix(r.URL.Path, "/dup/")
-			args := strings.Split(whatever, "/")
+		whatever := strings.TrimPrefix(r.URL.Path, "/dup/")
+		args := strings.Split(whatever, "/")
 
-			ss := fmt.Sprintf(duplicateStatement, args[0], args[0], args[1])
+		ss := fmt.Sprintf(duplicateStatement, args[0], args[0], args[1])
 
-			_, err := db.Exec(ss)
-			if err != nil {
-				w.Write([]byte(fmt.Sprintf("%v", err)))
-			} else {
-				rd := fmt.Sprintf("/t/%s", args[0])
-				http.Redirect(w, r, rd, http.StatusSeeOther)
-			}
+		_, err := db.Exec(ss)
+		if err != nil {
+			w.Write([]byte(fmt.Sprintf("%v", err)))
+		} else {
+			rd := fmt.Sprintf("/t/%s", args[0])
+			http.Redirect(w, r, rd, http.StatusSeeOther)
 		}
 	}
 }
 
 func handleInsertUpdate(db *sql.DB, w http.ResponseWriter, r *http.Request, op string) {
-
-	if "POST" != r.Method {
-		return
-	}
 
 	if err := r.ParseForm(); err != nil {
 		fmt.Fprintf(w, "ParseForm() err: %+v", err)
@@ -182,10 +176,6 @@ func handleAdd(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 
 func handleUpdate(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-
-		if "POST" != r.Method {
-			return
-		}
 
 		if err := r.ParseForm(); err != nil {
 			fmt.Fprintf(w, "ParseForm() err: %+v", err)
@@ -424,14 +414,14 @@ func handleShowAll(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 func makeRouter(db *sql.DB) *mux.Router {
 
 	router := mux.NewRouter()
-	router.HandleFunc("/", handleShowAll(db))
-	router.HandleFunc("/t/{table}", handleShowTable(db))
-	router.HandleFunc("/a", handleAdd(db))
+	router.HandleFunc("/", handleShowAll(db)).Methods(http.MethodGet)
+	router.HandleFunc("/t/{table}", handleShowTable(db)).Methods(http.MethodGet)
+	router.HandleFunc("/a", handleAdd(db)).Methods(http.MethodPost)
 	router.HandleFunc("/d/{table}/{rowid}", handleRemove(db)).Methods(http.MethodGet)
-	router.HandleFunc("/dup/", handleDuplicate(db))
-	router.HandleFunc("/u", handleUpdate(db))
-	router.HandleFunc("/s/", handleSort(db))
-	router.HandleFunc("/v/", handleView(db))
+	router.HandleFunc("/dup/", handleDuplicate(db)).Methods(http.MethodGet)
+	router.HandleFunc("/u", handleUpdate(db)).Methods(http.MethodPost)
+	router.HandleFunc("/s/", handleSort(db)).Methods(http.MethodGet)
+	router.HandleFunc("/v/", handleView(db)).Methods(http.MethodGet)
 
 	return router
 }
