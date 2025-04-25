@@ -79,14 +79,15 @@ func handleRemove(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
 		vars := mux.Vars(r)
-		sqlDeleteRow := fmt.Sprintf(`DELETE FROM %s WHERE ROWID=%s`, vars["table"], vars["rowid"])
 
-		res, err := db.Exec(sqlDeleteRow)
+		// todo: sanitize input
+		query := fmt.Sprintf(`DELETE FROM %s WHERE ROWID=?`, vars["table"])
+		res, err := db.Exec(query, vars["rowid"])
 		if err != nil {
 			log.Printf("db: %v", err)
 		} else {
-			ra, err := res.RowsAffected()
-			log.Printf("db (ok): %v %v", ra, err)
+			ra, _ := res.RowsAffected()
+			log.Printf("db (ok): %v ", ra)
 		}
 		rd := fmt.Sprintf("/t/%s", vars["table"])
 		http.Redirect(w, r, rd, http.StatusSeeOther)
@@ -96,20 +97,21 @@ func handleRemove(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 func handleDuplicate(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
 
-		duplicateStatement := `insert into %s select * from %s where rowid=%s`
+		vars := mux.Vars(r)
 
-		whatever := strings.TrimPrefix(r.URL.Path, "/dup/")
-		args := strings.Split(whatever, "/")
-
-		ss := fmt.Sprintf(duplicateStatement, args[0], args[0], args[1])
-
-		_, err := db.Exec(ss)
+		query := fmt.Sprintf(`INSERT INTO %s SELECT * FROM %s WHERE ROWID=?`,
+			vars["table"], vars["table"])
+		// todo: sanitize input
+		res, err := db.Exec(query, vars["rowid"])
 		if err != nil {
-			w.Write([]byte(fmt.Sprintf("%v", err)))
+			log.Printf("db: %v", err)
 		} else {
-			rd := fmt.Sprintf("/t/%s", args[0])
-			http.Redirect(w, r, rd, http.StatusSeeOther)
+			ra, err := res.RowsAffected()
+			log.Printf("db (ok): %v %v", ra, err)
 		}
+
+		rd := fmt.Sprintf("/t/%s", vars["table"])
+		http.Redirect(w, r, rd, http.StatusSeeOther)
 	}
 }
 
@@ -418,7 +420,7 @@ func makeRouter(db *sql.DB) *mux.Router {
 	router.HandleFunc("/t/{table}", handleShowTable(db)).Methods(http.MethodGet)
 	router.HandleFunc("/a", handleAdd(db)).Methods(http.MethodPost)
 	router.HandleFunc("/d/{table}/{rowid}", handleRemove(db)).Methods(http.MethodGet)
-	router.HandleFunc("/dup/", handleDuplicate(db)).Methods(http.MethodGet)
+	router.HandleFunc("/dup/{table}/{rowid}", handleDuplicate(db)).Methods(http.MethodGet)
 	router.HandleFunc("/u", handleUpdate(db)).Methods(http.MethodPost)
 	router.HandleFunc("/s/", handleSort(db)).Methods(http.MethodGet)
 	router.HandleFunc("/v/", handleView(db)).Methods(http.MethodGet)
