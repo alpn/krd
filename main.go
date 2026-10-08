@@ -172,7 +172,7 @@ func handleInsertUpdate(db *sql.DB, w http.ResponseWriter, r *http.Request, op s
 
 func handleAdd(db *sql.DB) func(w http.ResponseWriter, r *http.Request) {
 	return func(w http.ResponseWriter, r *http.Request) {
-		handleInsertUpdate(db, w, r, "insert")
+		handleInsertUpdate(db, w, r, "INSERT")
 	}
 }
 
